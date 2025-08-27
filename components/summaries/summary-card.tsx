@@ -1,0 +1,117 @@
+"use client";
+
+import { Card } from "@/components/ui/card";
+import DeleteButton from "@/components/summaries/delete-button";
+import Link from "next/link";
+import { FileText, Edit2, Share2 } from "lucide-react";
+import { cn, formatFileName } from "@/lib/utils";
+import { formatDistanceToNow } from "date-fns";
+import { MotionDiv } from "../common/motion-wrapper";
+import { itemVariants } from "@/utils/constants";
+import { Button } from "@/components/ui/button";
+import { ShareSummaryDialog } from "./share-summary-dialog";
+import { useState } from "react";
+
+const SummaryHeader = ({
+  fileUrl,
+  title,
+  createdAt,
+}: {
+  fileUrl: string;
+  title: string | null;
+  createdAt: string;
+}) => {
+  return (
+    <div className="flex items-start gap-2 sm:gap-4">
+      <FileText className="w-6 h-6 sm:w-8 sm:h-8 text-rose-400 mt-1" />
+      <div className="flex-1 min-w-0">
+        <h3 className="text-base xl:text-lg font-semibold text-gray-900 truncate w-4/5">
+          {title || formatFileName(fileUrl)}
+        </h3>
+        <p className="text-sm text-gray-500 ">
+          {formatDistanceToNow(new Date(createdAt), { addSuffix: true })}
+        </p>
+      </div>
+    </div>
+  );
+};
+
+const StatsBadge = ({ status }: { status: string }) => {
+  return (
+    <span
+      className={cn(
+        "px-3 py-1 text-xs font-medium rounded-full capitalize",
+        status === "completed"
+          ? "bg-green-100 text-green-800"
+          : "bg-yellow-100 text-yellow-800"
+      )}
+    >
+      {status}
+    </span>
+  );
+};
+
+export default function SummaryCard({ summary }: { summary: any }) {
+  const [showShareDialog, setShowShareDialog] = useState(false);
+
+  return (
+    <>
+      <MotionDiv variants={itemVariants} initial="hidden" animate="visible" whileHover={{scale: 1.02,transition: {duration: 0.2,ease: "easeOut"}}} >
+        <Card className="relative h-full ">
+          <div className="absolute top-2 right-2 flex gap-2">
+            {/* Edit Button */}
+            <Link href={`summaries/${summary.id}`}>
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-8 w-8 p-0 bg-white/80 hover:bg-white/90"
+                title="Edit Summary"
+              >
+                <Edit2 className="h-4 w-4 text-blue-600" />
+              </Button>
+            </Link>
+            
+            {/* Share Button */}
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-8 w-8 p-0 bg-white/80 hover:bg-white/90"
+              title="Share Summary"
+              onClick={() => setShowShareDialog(true)}
+            >
+              <Share2 className="h-4 w-4 text-green-600" />
+            </Button>
+            
+            {/* Delete Button */}
+            <DeleteButton summaryId={summary.id} />
+          </div>
+          
+          <Link href={`summaries/${summary.id}`} className="block px-4 sm:px-6">
+            <div className="flex flex-col gap-3 sm:gap-4">
+              <SummaryHeader
+                fileUrl={summary.original_file_url}
+                title={summary.title}
+                createdAt={summary.created_at}
+              />
+              <p className="text-gray-600 line-clamp-2 text-sm sm:text-base pl-2">
+                {summary.summary_text}
+              </p>
+              <div className="flex justify-between items-center mt-2 sm:mt-4">
+                <StatsBadge status={summary.status} />
+              </div>
+            </div>
+          </Link>
+        </Card>
+      </MotionDiv>
+
+      {/* Share Dialog */}
+      <ShareSummaryDialog
+        isOpen={showShareDialog}
+        onClose={() => setShowShareDialog(false)}
+        summaryId={summary.id}
+        fileName={summary.file_name || "Unknown File"}
+        title={summary.title || "Document Summary"}
+      />
+    </>
+  );
+}
