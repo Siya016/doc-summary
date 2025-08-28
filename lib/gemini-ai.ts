@@ -50,7 +50,7 @@ export const generateSummaryFromGemini = async (pdfText: string, customInstructi
      Ensure the summary is comprehensive and suitable for professional or executive review. ${cleanedPdfText}`;
 
     const result = await genAI.models.generateContent({
-      model: "gemini-2.0-flash", // Updated to use the correct model name
+      model: "gemini-1.5-flash", // Updated to use the correct model name
       contents: [{ role: "user", parts: [{ text: prompt }] }],
       config: {
         temperature: 0.7,
