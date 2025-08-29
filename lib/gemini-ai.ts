@@ -71,7 +71,35 @@ export const generateSummaryFromGemini = async (pdfText: string, customInstructi
     }
     
     // Check if the summary contains error indicators
-    if (summary.includes("could not be generated") || summary.includes("error")) {
+    // if (summary.includes("could not be generated") || summary.includes("error")) {
+    //   throw new Error("Generated summary contains error indicators");
+    // }
+      
+    if (summary.toLowerCase().includes("i'm sorry") && summary.toLowerCase().includes("cannot")) {
+    throw new Error("Generated summary appears to be an error response from the AI model");
+    }
+    
+    // Check if the summary contains actual error indicators (not legitimate content about errors)
+    const errorIndicators = [
+      "could not be generated",
+      "failed to generate",
+      "unable to process",
+      "processing error",
+      "api error",
+      "service unavailable",
+      "quota exceeded",
+      "rate limit exceeded",
+      "content policy violation",
+      "network error",
+      "authentication failed",
+      "invalid request"
+    ];
+    
+    const hasErrorIndicator = errorIndicators.some(indicator => 
+      summary.toLowerCase().includes(indicator.toLowerCase())
+    );
+    
+    if (hasErrorIndicator) {
       throw new Error("Generated summary contains error indicators");
     }
     
