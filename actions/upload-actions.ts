@@ -63,12 +63,26 @@ export async function generatePdfSummary({
         console.log(`✅ Chunk ${i + 1}/${pdfTextChunks.length} summary generated successfully`);
       } catch (error) {
         console.error(`❌ Failed to generate summary for chunk ${i + 1}/${pdfTextChunks.length}:`, error);
+        console.error(`Error details:`, {
+          message: error instanceof Error ? error.message : 'Unknown error',
+          chunkLength: chunk.length,
+          chunkPreview: chunk.substring(0, 100) + "..."
+        });
         failedChunks.push(i + 1);
         // Continue with other chunks even if one fails
-        summaries.push(`[Summary for section ${i + 1} could not be generated due to an error: ${error instanceof Error ? error.message : 'Unknown error'}]`);
+        // Instead of adding error placeholders, try to provide a basic summary
+        try {
+          // Attempt to generate a basic summary with a simpler prompt
+          const basicPrompt = `Provide a brief summary of this text in 2-3 sentences: ${chunk.substring(0, 1000)}`;
+          const basicSummary = await generateSummaryFromGemini(chunk.substring(0, 1000), "Keep it brief and simple");
+          summaries.push(basicSummary);
+        } catch (retryError) {
+          console.error(`Retry also failed for chunk ${i + 1}:`, retryError);
+          summaries.push(`[Section ${i + 1} summary unavailable]`);
+        }
       }
     }
-
+    
     if (summaries.length === 0) {
       return {
         success: false,
@@ -81,6 +95,17 @@ export async function generatePdfSummary({
     if (failedChunks.length > 0) {
       console.warn(`Warning: ${failedChunks.length} chunks failed to process:`, failedChunks);
     }
+
+      // If more than half the chunks failed, return an error
+      if (failedChunks.length > pdfTextChunks.length / 2) {
+        return {
+          success: false,
+          message: `Too many chunks failed to process (${failedChunks.length}/${pdfTextChunks.length}). The PDF might be too complex or contain unsupported content.`,
+          data: null,
+        };
+      }
+    }
+    
 
     // Combine all summaries into one comprehensive summary
     let combinedSummary: string;
